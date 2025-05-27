@@ -30,7 +30,10 @@ public class InfoPlist {
         String version = this.plist.stringValueForPath("CFBundleShortVersionString");
         this.version = version;
         // 构建版本号
-        String buildVersion = this.plist.stringValueForPath("CFBundleVersion");
+        String buildVersion = this.plist.stringValueForPath("VersionCode");
+        if(buildVersion == null) {
+            buildVersion = this.plist.stringValueForPath("CFBundleVersion");
+        }
         this.buildVersion = buildVersion;
         // 应用ID
         String bundleID = this.plist.stringValueForPath("CFBundleIdentifier");
