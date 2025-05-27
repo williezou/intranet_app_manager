@@ -9,7 +9,10 @@ import org.yzr.utils.file.PathManager;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLEncoder;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
 import java.util.Date;
@@ -52,7 +55,10 @@ public class PackageViewModel {
         this.iconKey = aPackage.getIconFile().getKey();
         this.displaySize = String.format("%.2f MB", aPackage.getSize() / (1.0F * FileUtils.ONE_MB));
         Date updateTime = new Date(this.createTime);
-        String displayTime = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).format(updateTime);
+        //String displayTime = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).format(updateTime);
+        ZonedDateTime chinaTime = updateTime.toInstant().atZone(ZoneId.of("Asia/Shanghai"));
+        String displayTime = chinaTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        
         this.displayTime = displayTime;
         if (aPackage.getPlatform().equals("ios")) {
             this.iOS = true;
