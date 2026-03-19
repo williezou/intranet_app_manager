@@ -63,7 +63,7 @@
               </div>
               <div class="action-animate">
                 <input id="installURL" th:value="${app.currentPackage.installURL}" style="display: none" />
-                <div class="action-animate-text" id="install">下载安装</div>
+                <a class="action-animate-text" id="install" th:href="${app.currentPackage.installURL}">下载安装</a>
                 <div class="action-animate-active"></div>
               </div>
               <div class="action-animate" th:if="${#strings.containsIgnoreCase(app.platform,'ios')}">
