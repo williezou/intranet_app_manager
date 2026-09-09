@@ -1,4 +1,4 @@
-package org.yzr.utils;
+package org.yzr.utils.image;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -37,14 +37,14 @@ public class ImageUtils {
 
     /**
      * 重置图片大小
-     * @param soureFilePath
+     * @param sourceFilePath
      * @param targetFilePath
      * @param height
      * @param width
      */
-    public static void resize(String soureFilePath, String targetFilePath, int width, int height) {
+    public static void resize(String sourceFilePath, String targetFilePath, int width, int height) {
         try {
-            File input = new File(soureFilePath);
+            File input = new File(sourceFilePath);
             File output = new File(targetFilePath);
             output.mkdirs();
             BufferedImage image = ImageIO.read(input);

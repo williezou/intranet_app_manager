@@ -4,10 +4,17 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.io.FileUtils;
 import org.springframework.util.StringUtils;
 import org.yzr.model.Package;
-import org.yzr.utils.PathManager;
+import org.yzr.utils.date.DateUtil;
+import org.yzr.utils.file.PathManager;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URLEncoder;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,39 +39,47 @@ public class PackageViewModel {
     private List<String> devices;
     private int deviceCount;
     private String message;
+    private String iconKey;
 
-    public PackageViewModel(Package aPackage, PathManager pathManager) {
-        this.downloadURL = pathManager.getBaseURL(false) + "p/" + aPackage.getId();
-        this.safeDownloadURL = pathManager.getBaseURL(true) + "p/" + aPackage.getId();
-        this.iconURL = pathManager.getPackageResourceURL(aPackage, true) + "icon.png";
+    public PackageViewModel(Package aPackage, HttpServletRequest request) {
+        String httpURL = PathManager.request(request).getBaseURL();
+        String httpsURL = PathManager.request(request).useHttps().getBaseURL();
+        this.downloadURL = httpURL + "/p/" + aPackage.getId();
+        this.safeDownloadURL = httpsURL + "/p/" + aPackage.getId();
         this.id = aPackage.getId();
         this.version = aPackage.getVersion();
         this.bundleID = aPackage.getBundleID();
         this.name = aPackage.getName();
         this.createTime = aPackage.getCreateTime();
         this.buildVersion = aPackage.getBuildVersion();
+        this.iconKey = aPackage.getIconFile().getKey();
         this.displaySize = String.format("%.2f MB", aPackage.getSize() / (1.0F * FileUtils.ONE_MB));
         Date updateTime = new Date(this.createTime);
-        String displayTime = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).format(updateTime);
+        //String displayTime = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).format(updateTime);
+        ZonedDateTime chinaTime = updateTime.toInstant().atZone(ZoneId.of("Asia/Shanghai"));
+        String displayTime = chinaTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        
         this.displayTime = displayTime;
         if (aPackage.getPlatform().equals("ios")) {
             this.iOS = true;
-            String url = pathManager.getBaseURL(true) + "m/" + aPackage.getId();
+            String url = httpsURL + "/m/" + aPackage.getId();
             try {
                 this.installURL = "itms-services://?action=download-manifest&url=" + URLEncoder.encode(url, "utf-8");
-            } catch (Exception e){e.printStackTrace();}
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else if (aPackage.getPlatform().equals("android")) {
             this.iOS = false;
-            this.installURL = pathManager.getPackageResourceURL(aPackage, false) + aPackage.getFileName();
+            this.installURL = httpURL + "/p/" + aPackage.getId();
         }
-        this.previewURL = pathManager.getBaseURL(false) + "s/" + aPackage.getApp().getShortCode() + "?id=" + aPackage.getId();
+        this.previewURL = httpURL + "/s/" + aPackage.getApp().getShortCode() + "?id=" + aPackage.getId();
         if (this.isiOS()) {
             if (aPackage.getProvision() == null) {
                 this.type = "内测版";
             } else {
                 if (aPackage.getProvision().isEnterprise()) {
                     this.type = "企业版";
-                } else  {
+                } else {
                     if ("AdHoc".equalsIgnoreCase(aPackage.getProvision().getType())) {
                         this.type = "内测版";
                     } else {
@@ -91,6 +106,9 @@ public class PackageViewModel {
             }
         }
         this.message = message;
+        try {
+            this.iconURL = httpsURL + "/fetch/" + aPackage.getIconFile().getKey();
+        } catch (Exception e){}
     }
 
     public String getDownloadURL() {
@@ -163,5 +181,9 @@ public class PackageViewModel {
 
     public String getMessage() {
         return message;
+    }
+
+    public String getIconKey() {
+        return iconKey;
     }
 }

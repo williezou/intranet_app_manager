@@ -37,7 +37,7 @@
               <div class="icon-container wrapper">
                 <i class="icon-icon_path bg-path"></i>
                 <span class="icon">
-                  <img th:src="@{'/' + ${app.icon}}" itemprop="image">
+                  <img th:src="${app.icon}" itemprop="image">
                 </span>
                 <span class="qrcode" id="qrcode" th:data="${app.currentPackage.previewURL}">
                 </span>
@@ -63,7 +63,7 @@
               </div>
               <div class="action-animate">
                 <input id="installURL" th:value="${app.currentPackage.installURL}" style="display: none" />
-                <div class="action-animate-text" id="install">下载安装</div>
+                <a class="action-animate-text" id="install" th:href="${app.currentPackage.installURL}">下载安装</a>
                 <div class="action-animate-active"></div>
               </div>
               <div class="action-animate" th:if="${#strings.containsIgnoreCase(app.platform,'ios')}">

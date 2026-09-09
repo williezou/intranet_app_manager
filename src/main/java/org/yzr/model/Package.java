@@ -6,7 +6,7 @@ import org.hibernate.annotations.GenericGenerator;
 import javax.persistence.*;
 
 @Entity
-@Table(name="tb_package")
+@Table(name = "tb_package")
 public class Package {
     // 主键
     @Id
@@ -32,15 +32,21 @@ public class Package {
     private String platform;
     // 扩展消息 (json格式)
     private String extra;
-    // 文件名
-    private String fileName;
+    // 源文件
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name="source_file_id",referencedColumnName="id")
+    private Storage sourceFile;
+    // 图标
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name="icon_file_id",referencedColumnName="id")
+    private Storage iconFile;
     @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-    @JoinColumn(name="appId")
+    @JoinColumn(name = "appId")
     private App app;
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     // Provision 文件
-    @JoinColumn(name = "provisionId",referencedColumnName = "id")
-    private  Provision provision;
+    @JoinColumn(name = "provisionId", referencedColumnName = "id")
+    private Provision provision;
 
     public String getId() {
         return id;
@@ -122,12 +128,20 @@ public class Package {
         this.extra = extra;
     }
 
-    public String getFileName() {
-        return fileName;
+    public Storage getSourceFile() {
+        return sourceFile;
     }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
+    public void setSourceFile(Storage sourceFile) {
+        this.sourceFile = sourceFile;
+    }
+
+    public Storage getIconFile() {
+        return iconFile;
+    }
+
+    public void setIconFile(Storage iconFile) {
+        this.iconFile = iconFile;
     }
 
     public App getApp() {

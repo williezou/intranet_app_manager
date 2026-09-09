@@ -63,7 +63,14 @@ mysql -u root -p
 
 ```shell
 # 创建库
-create database app_manager DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+drop database if exists app_manager;
+drop user if exists 'app_manager'@'localhost';
+-- 支持emoji：需要mysql数据库参数： character_set_server=utf8mb4
+create database app_manager default character set utf8mb4 collate utf8mb4_unicode_ci;
+use app_manager;
+create user 'app_manager'@'localhost' identified by 'app_manager123456';
+grant all privileges on app_manager.* to 'app_manager'@'localhost';
+flush privileges;
 ```
 
 ##### HTTPS 证书
@@ -72,7 +79,7 @@ create database app_manager DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
 
 ##### 配置
 
- [下载](https://github.com/yizhaorong/intranet_app_manager/releases/download/v1.0.0/release_1.0.0.zip)，解压包。
+ [下载](https://share.weiyun.com/5zRBCtF)，解压包。
 
 > 配置 HTTPS
 
@@ -114,7 +121,7 @@ java -jar intranet_app_manager-1.0.0.jar
 
 ```shell
 # 上传到APP管理平台
-result=$(curl -F "file=@$WORKSPACE/build/Ewt360_debug/Ewt360.ipa" http://172.16.241.203/app/upload)
+result=$(curl -F "file=@$WORKSPACE/build/Ewt360_debug/Ewt360.ipa" -F "token=ec7551847a2faa3988172e648d554c20" http://172.16.241.203/app/upload)
 code_url=$(echo $result | sed 's/.*\(http.*\)",.*/\1/g')
 echo "code_url="$code_url > $WORKSPACE/code.txt
 ```
