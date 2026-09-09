@@ -36,7 +36,11 @@ public class Application {
                 context.addConstraint(constraint);
             }
         };
-        tomcat.addAdditionalTomcatConnectors(httpConnector());
+        boolean httpEnabled = Boolean.parseBoolean(
+                environment.getProperty("server.http.enabled", "true"));
+        if (httpEnabled) {
+            tomcat.addAdditionalTomcatConnectors(httpConnector());
+        }
         return tomcat;
     }
 
