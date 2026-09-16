@@ -159,17 +159,30 @@ package-import.min-free-space-bytes=21474836480
 Jenkins 构建完成后只发送文件路径和元数据（请求中不包含安装包内容）：
 
 ```shell
-result=$(curl -sS -X POST \
-  -k -H "Host: app-manager.intranet:8444" \
+result=$(curl -sS --fail-with-body -X POST \
+  -H "Host: app-manager.example.com" \
+  -H "X-Forwarded-Proto: https" \
   -H "X-Package-Import-Token: $PACKAGE_IMPORT_TOKEN" \
   --data-urlencode "filePath=$WORKSPACE/build/Ewt360_debug/Ewt360.ipa" \
-  --data-urlencode "token=ec7551847a2faa3988172e648d554c20" \
+  --data-urlencode "token=$APP_UPLOAD_TOKEN" \
   --data-urlencode "jobName=$JOB_NAME" \
   --data-urlencode "buildNumber=$BUILD_NUMBER" \
-  https://127.0.0.1:8444/app/import)
-code_url=$(echo "$result" | sed 's/.*\(http.*\)",.*/\1/g')
+  http://127.0.0.1:8444/app/import)
+code_url=$(printf '%s' "$result" | jq -er 'select(.code == 0) | .data')
 echo "code_url=$code_url" > "$WORKSPACE/code.txt"
 ```
+
+`APP_UPLOAD_TOKEN` 是业务用户 token，与独立的 `PACKAGE_IMPORT_TOKEN` 不同。
+示例中的 `8444` 是本机 Nginx 的 HTTP 后端端口，请按实际部署替换。
+
+如果已有域名和可信 HTTPS 证书，可由域名入口终止 TLS，再通过 HTTP 转发到宿主机，
+不需要给宿主机配置自签证书。APP 管理服务本身仍可仅监听 `127.0.0.1:8090`。
+反向代理必须向服务传递公开域名的 `Host` 和 `X-Forwarded-Proto: https`；
+`storage.local.address` 也应配置为公开的 `https://app-manager.example.com/fetch/`。
+本机 `/app/import` 建议在代理层限制为仅允许回环地址访问。
+
+HTTP 仅用于内部后端或本机导入请求。iOS 的安装页、Manifest、IPA 和图标对外仍须通过
+设备信任的 HTTPS 域名访问，生成的链接不应包含宿主机 IP、内部端口或 `127.0.0.1`。
 
 服务会校验真实路径、文件扩展名和 ZIP 文件头，只允许读取配置目录中的 APK/IPA，并在
 导入前复制到服务私有临时文件。单包默认最多 1GB、ZIP 最多 20000 项、解压后最多
