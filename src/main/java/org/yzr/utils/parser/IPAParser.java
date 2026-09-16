@@ -113,11 +113,14 @@ public class IPAParser implements PackageParser {
 
     @Override
     public Package parse(String filePath) {
+        String targetPath = null;
         try {
             Package aPackage = new Package();
             // 解压 IPA 包
-            String targetPath = ZipUtil.unzip(filePath);
+            targetPath = ZipUtil.unzip(filePath);
+            if (targetPath == null) return null;
             String appPath = appPath(targetPath);
+            if (appPath == null) return null;
             String infoPlistPath = appPath + File.separator + "Info.plist";
             infoPlistPath = infoPlistPath.replaceAll("//", "/");
             File infoPlistFile = new File(infoPlistPath);
@@ -149,11 +152,17 @@ public class IPAParser implements PackageParser {
             // 解析 Provision
             aPackage.setProvision(getProvision(appPath));
 
-            // 清除目录
-            FileUtils.deleteDirectory(new File(targetPath));
             return aPackage;
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (targetPath != null) {
+                try {
+                    FileUtils.deleteDirectory(new File(targetPath));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
         return null;
     }

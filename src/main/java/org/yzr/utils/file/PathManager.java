@@ -13,6 +13,16 @@ public class PathManager {
     public static PathManager request(HttpServletRequest request) {
         PathManager pathManager = new PathManager();
         pathManager.host = request.getHeader("host");
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        if (forwardedProto != null && forwardedProto.length() > 0) {
+            // 代理链可能传入逗号分隔的值，最左侧是客户端最初使用的协议。
+            forwardedProto = forwardedProto.split(",")[0].trim();
+        }
+        if ("http".equalsIgnoreCase(forwardedProto) || "https".equalsIgnoreCase(forwardedProto)) {
+            pathManager.scheme = forwardedProto.toLowerCase();
+        } else if ("http".equalsIgnoreCase(request.getScheme()) || "https".equalsIgnoreCase(request.getScheme())) {
+            pathManager.scheme = request.getScheme().toLowerCase();
+        }
         return pathManager;
     }
 

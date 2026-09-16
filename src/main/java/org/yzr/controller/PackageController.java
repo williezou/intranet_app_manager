@@ -18,6 +18,7 @@ import org.yzr.model.Package;
 import org.yzr.model.Storage;
 import org.yzr.model.User;
 import org.yzr.service.AppService;
+import org.yzr.service.LocalPackageImportService;
 import org.yzr.service.PackageService;
 import org.yzr.service.StorageService;
 import org.yzr.service.UserService;
@@ -37,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,6 +55,8 @@ public class PackageController {
     private StorageUtil storageUtil;
     @Resource
     private StorageService storageService;
+    @Resource
+    private LocalPackageImportService localPackageImportService;
 
     /**
      * 预览页
@@ -132,6 +136,38 @@ public class PackageController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseUtil.badArgument();
+        }
+    }
+
+    /**
+     * 从与服务共享文件系统的 Jenkins 工作目录导入 APK/IPA，不传输文件内容。
+     */
+    @PostMapping("/app/import")
+    @ResponseBody
+    public BaseResponse importLocal(@RequestParam("filePath") String filePath,
+                                    @RequestHeader(value = "X-Package-Import-Token", required = false) String importToken,
+                                    HttpServletRequest request) {
+        Path prepared = null;
+        try {
+            User user = getUser(request);
+            if (user == null || !localPackageImportService.isAuthorized(importToken)) {
+                return ResponseUtil.unauthz();
+            }
+
+            prepared = localPackageImportService.prepare(filePath);
+            Map<String, String> extra = getExtraParams(request);
+            App app = this.appService.addPackage(prepared.toString(), extra, user);
+            String baseURL = PathManager.request(request).getBaseURL();
+            String codeURL = baseURL + "/p/code/" + app.getCurrentPackage().getId();
+            WebHookClient.sendMessage(app, baseURL, storageUtil);
+            return ResponseUtil.ok(codeURL);
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.fail(402, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtil.badArgument();
+        } finally {
+            localPackageImportService.cleanup(prepared);
         }
     }
 

@@ -1,6 +1,7 @@
 package org.yzr.service;
 
 
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
@@ -159,6 +160,12 @@ public class AppService {
     public App addPackage(String filePath, Map<String, String> extra, User user) throws Exception {
         // 1. 构建包
         Package aPackage = ParserClient.parse(filePath);
+        if (aPackage == null) {
+            throw new IllegalArgumentException("安装包解析失败");
+        }
+        if (extra != null && !extra.isEmpty()) {
+            aPackage.setExtra(JSON.toJSONString(extra));
+        }
         // 2. 文件转存
         storeFiles(filePath, aPackage);
         // 获取包对应的APP是否存在
@@ -214,14 +221,20 @@ public class AppService {
     private void storeFiles(String filePath, Package aPackage) throws IOException {
         // 2.1 源文件
         File sourceFile = new File(filePath);
-        Storage storage = storageUtil.store(new FileInputStream(sourceFile), sourceFile.length(), "application/octet-stream", sourceFile.getName());
+        Storage storage;
+        try (FileInputStream inputStream = new FileInputStream(sourceFile)) {
+            storage = storageUtil.store(inputStream, sourceFile.length(), "application/octet-stream", sourceFile.getName());
+        }
         FileUtils.forceDelete(sourceFile);
         aPackage.setSourceFile(storage);
         // 2.2 图标文件
         String iconFilePath = PathManager.getTempFilePath("png");
         ImageUtils.resize(aPackage.getIconFile().getUrl(), iconFilePath, 192, 192);
         File iconFile = new File(iconFilePath);
-        Storage iconStorage = storageUtil.store(new FileInputStream(iconFile), iconFile.length(), "application/png", iconFile.getName());
+        Storage iconStorage;
+        try (FileInputStream inputStream = new FileInputStream(iconFile)) {
+            iconStorage = storageUtil.store(inputStream, iconFile.length(), "application/png", iconFile.getName());
+        }
         FileUtils.forceDelete(new File(aPackage.getIconFile().getUrl()));
         FileUtils.forceDelete(iconFile);
         aPackage.setIconFile(iconStorage);

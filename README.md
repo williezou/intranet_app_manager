@@ -137,3 +137,46 @@ Description: `<a href="${code_url}" target="_blank"><img src='${code_url}' heigh
 ![shell](images/shell.jpg)
 
 ![code](images/code.jpg)
+
+#### Jenkins 同机部署：按路径导入
+
+当 Jenkins 与 APP 管理服务能访问同一个文件系统时，不必再次上传 APK/IPA 内容。先在
+`application.properties` 中启用本机导入，并将允许目录限制为 Jenkins 工作目录：
+
+```properties
+package-import.enabled=true
+package-import.allowed-roots=/var/lib/jenkins/workspace
+package-import.token=${PACKAGE_IMPORT_TOKEN:}
+package-import.max-file-size-bytes=1073741824
+package-import.max-archive-entries=20000
+package-import.max-extracted-size-bytes=2147483648
+package-import.min-free-space-bytes=21474836480
+```
+
+`PACKAGE_IMPORT_TOKEN` 应使用独立的 Jenkins Secret Text 凭据提供，例如用
+`openssl rand -hex 32` 生成；不要复用用户上传 token，也不要提交到代码仓库。
+
+Jenkins 构建完成后只发送文件路径和元数据（请求中不包含安装包内容）：
+
+```shell
+result=$(curl -sS -X POST \
+  -k -H "Host: app-manager.intranet:8444" \
+  -H "X-Package-Import-Token: $PACKAGE_IMPORT_TOKEN" \
+  --data-urlencode "filePath=$WORKSPACE/build/Ewt360_debug/Ewt360.ipa" \
+  --data-urlencode "token=ec7551847a2faa3988172e648d554c20" \
+  --data-urlencode "jobName=$JOB_NAME" \
+  --data-urlencode "buildNumber=$BUILD_NUMBER" \
+  https://127.0.0.1:8444/app/import)
+code_url=$(echo "$result" | sed 's/.*\(http.*\)",.*/\1/g')
+echo "code_url=$code_url" > "$WORKSPACE/code.txt"
+```
+
+服务会校验真实路径、文件扩展名和 ZIP 文件头，只允许读取配置目录中的 APK/IPA，并在
+导入前复制到服务私有临时文件。单包默认最多 1GB、ZIP 最多 20000 项、解压后最多
+2GB，并始终保留至少 20GB 可用空间；导入完成会清除临时副本并保留 Jenkins 原始产物。服务进程用户必须拥有该文件的
+读取权限。如果双方运行在不同容器中，需要把 Jenkins 产物目录以相同路径挂载进 APP
+管理服务容器。上述限制可以调低；ZIP 条目数和解压大小不能高于系统的 20000 项和 2GB
+硬上限。
+
+示例通过回环地址调用，避免导入密钥离开宿主机；`Host` 请求头必须填写手机能够访问的
+APP 管理平台域名，因为项目会依据该值生成二维码和下载链接。
