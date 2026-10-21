@@ -1,0 +1,56 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>清理 APP 管理平台（intranet_app_manager）的旧安装包：删除超过保留天数的包在数据库里的记录（tb_package 及其关联的 tb_storage、tb_provision）和 storage 里的安装包、图标文件。&#xd;
+各 App 的当前版本不管多旧都保留。&#xd;
+默认「仅预览」只列出会删除的包；确认后取消勾选再运行一次才真正删除。删除的明细记在构建日志里。&#xd;
+脚本：/Users/jenkins/Services/intranet_app_manager/bin/cleanup-packages.sh（源码在 intranet_app_manager 仓库 scripts/）</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>50</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>KEEP_DAYS</name>
+          <description>保留最近多少天上传的安装包，更早的删除（各 App 的当前版本除外）</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>30</string>
+              <string>7</string>
+              <string>15</string>
+              <string>60</string>
+              <string>90</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>DRY_RUN</name>
+          <description>仅预览：只列出会删除的安装包，不做任何删除</description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>/Users/jenkins/Services/intranet_app_manager/bin/cleanup-packages.sh &quot;$KEEP_DAYS&quot; &quot;$DRY_RUN&quot;</command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>
